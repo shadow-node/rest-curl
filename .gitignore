@@ -1,0 +1,7 @@
+.vscode/
+CmakeFiles/
+CmakeCache.txt
+cmake_install.cmake
+demo
+Makefile
+restcurl.node
