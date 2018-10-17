@@ -2,7 +2,12 @@
   "targets": [
     {
       "target_name": "restcurl",
-      "sources": [ "restcurl.c", "deps/restclient-cpp/connection.cc", "deps/restclient-cpp/helpers.cc", "deps/restclient-cpp/restclient.cc" ],
+      "sources": [
+        "restcurl.c",
+        "deps/restclient-cpp/connection.cc",
+        "deps/restclient-cpp/helpers.cc",
+        "deps/restclient-cpp/restclient.cc"
+      ],
       "cflags_cc!": [
         "-std=c++11",
         "-stdlib=libc++",
