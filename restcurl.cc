@@ -3,9 +3,7 @@
 #include <list>
 extern "C"
 {
-  #include <iotjs.h>
-  #include <iotjs_def.h>
-  #include <iotjs_binding.h>
+  #include <uv.h>
   #include <node_api.h>
   #include "./common.h"
 }
@@ -60,7 +58,7 @@ static void onRequestFinish(uv_async_t *handle)
   napi_value recv;
   napi_value resName;
   napi_async_context ctx;
-  napi_callback_scope scope;
+  napi_handle_scope scope;
   napi_value argv[argc];
   for (auto ite = cbs.begin(); ite != cbs.end(); ++ite)
   {
@@ -68,17 +66,17 @@ static void onRequestFinish(uv_async_t *handle)
     body = &(*ite)->body;
     env = (*ite)->env;
     cbRef = (*ite)->cbRef;
-
+    NAPI_CALL_RETURN_VOID(env, napi_open_handle_scope(env, &scope));
     NAPI_CALL_RETURN_VOID(env, napi_get_reference_value(env, cbRef, &cb));
-    NAPI_CALL_RETURN_VOID(env, napi_async_init(env, cb, nullptr, &ctx));
-    NAPI_CALL_RETURN_VOID(env, napi_open_callback_scope(env, cb, ctx, &scope));
-    NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &recv));
+    NAPI_CALL_RETURN_VOID(env, napi_create_string_utf8(env, "restcurl", NAPI_AUTO_LENGTH, &resName));
+    NAPI_CALL_RETURN_VOID(env, napi_async_init(env, cb, resName, &ctx));
+    NAPI_CALL_RETURN_VOID(env, napi_get_global(env, &recv));
     NAPI_CALL_RETURN_VOID(env, napi_create_int32(env, code, &argv[0]));
     NAPI_CALL_RETURN_VOID(env, napi_create_string_utf8(env, body->c_str(), body->size(), &argv[1]));
     NAPI_CALL_RETURN_VOID(env, napi_make_callback(env, ctx, recv, cb, argc, argv, nullptr));
     NAPI_CALL_RETURN_VOID(env, napi_delete_reference(env, cbRef));
     NAPI_CALL_RETURN_VOID(env, napi_async_destroy(env, ctx));
-    NAPI_CALL_RETURN_VOID(env, napi_close_callback_scope(env, scope));
+    NAPI_CALL_RETURN_VOID(env, napi_close_handle_scope(env, scope));
     delete (*ite);
   }
 }
@@ -115,7 +113,9 @@ static napi_value request(napi_env env, napi_callback_info info)
 
 static napi_value Init(napi_env env, napi_value exports)
 {
-  uv_async_init(uv_default_loop(), &async, onRequestFinish);
+  uv_loop_s* loop;
+  NAPI_CALL(env, napi_get_uv_event_loop(env, &loop));
+  uv_async_init(loop, &async, onRequestFinish);
   napi_property_descriptor desc[] = {
     DECLARE_NAPI_PROPERTY("request", request),
   };
