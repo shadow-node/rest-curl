@@ -26,7 +26,7 @@ static std::mutex mutex;
 static uv_async_t async;
 static std::list<RestCurlResponseData *> responseCbs;
 
-static void doRequest(const char *body, size_t bodySize, napi_env env, napi_ref cbRef)
+static void doRequest(char *body, size_t bodySize, napi_env env, napi_ref cbRef)
 {
   RestCurlResponseData *response = new RestCurlResponseData();
   RestClient::Response r = RestClient::post(SERVER_URL, "application/json", body);
@@ -39,7 +39,7 @@ static void doRequest(const char *body, size_t bodySize, napi_env env, napi_ref 
   responseCbs.push_back(response);
   mutex.unlock();
   uv_async_send(&async);
-  delete body;
+  free(body);
 }
 
 static void onRequestFinish(uv_async_t *handle)
