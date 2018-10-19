@@ -24,7 +24,7 @@ PREFIX ""
 SUFFIX ".node"
 LINK_FLAGS "-rdynamic"
 )
-target_link_libraries(demo curl dl)
+target_link_libraries(demo iotjs curl dl)
 target_link_libraries(restcurl iotjs curl dl)
 
 # install(TARGETS demo DESTINATION ${CMAKE_INSTALL_DIR})
