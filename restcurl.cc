@@ -3,7 +3,6 @@
 #include <list>
 extern "C"
 {
-#include <uv.h>
 #include <node_api.h>
 #include "./common.h"
 }
@@ -46,7 +45,6 @@ static void onRequestFinish(napi_env env, napi_status status, void *workData)
   int code = data->code;
   std::string &body = data->resBody;
   napi_ref cbRef = data->cbRef;
-  printf("aaa\n");
   napi_handle_scope scope;
   NAPI_CALL_RETURN_VOID(env, napi_open_handle_scope(env, &scope));
   napi_value cb;
@@ -66,8 +64,7 @@ static void onRequestFinish(napi_env env, napi_status status, void *workData)
   NAPI_CALL_RETURN_VOID(env, napi_async_destroy(env, ctx));
   NAPI_CALL_RETURN_VOID(env, napi_close_handle_scope(env, scope));
   NAPI_CALL_RETURN_VOID(env, napi_delete_async_work(env, data->work));
-  free(data);
-  printf("bbb\n");
+  delete data;
 }
 
 static napi_value request(napi_env env, napi_callback_info info)
@@ -88,10 +85,10 @@ static napi_value request(napi_env env, napi_callback_info info)
     NAPI_CALL(env, napi_throw_error(env, nullptr, "Argument 2 expected a function"));
     return nullptr;
   }
-  auto data = (RestcurlData *)malloc(sizeof(RestcurlData));
+  auto data = new RestcurlData;
   NAPI_CALL(env, napi_get_value_string_utf8(env, argv[0], NULL, 0, &data->reqSize));
-  char *reqBody = (char *)malloc(data->reqSize);
-  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[0], reqBody, data->reqSize, &data->reqSize));
+  char *reqBody = (char *)malloc(data->reqSize + 1);
+  NAPI_CALL(env, napi_get_value_string_utf8(env, argv[0], reqBody, data->reqSize + 1, &data->reqSize));
   // assign const char * to std::string
   data->reqBody.assign(reqBody, data->reqSize);
   free(reqBody);
@@ -105,8 +102,6 @@ static napi_value request(napi_env env, napi_callback_info info)
 
 static napi_value Init(napi_env env, napi_value exports)
 {
-  uv_loop_s *loop;
-  NAPI_CALL(env, napi_get_uv_event_loop(env, &loop));
   napi_property_descriptor desc[] = {
       DECLARE_NAPI_PROPERTY("request", request),
   };
